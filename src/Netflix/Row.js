@@ -1,30 +1,63 @@
-import React, { useState, useEffect } from 'react'
-import axios from '../axios'
-import { imageUrl } from '../VideoCard'
+import React, { useState, useEffect } from "react"
+import axios from "../axios"
+import { imageUrl } from "../VideoCard"
+import "./Row.css"
+import Youtube from "react-youtube"
+import movieTrailer from "movie-trailer"
 
-function Row({ title, fetchUrl }) {
-    const [movies, setMovies] = useState([])
+function Row({ title, fetchUrl, isLargeRow }) {
+  const [movies, setMovies] = useState([])
+  const [trailerUrl, setTrailerUrl] = useState("")
 
-    useEffect(()=> {
-      async function fetchData(){
-          const request = await axios.get(fetchUrl)
-        //   console.log(request)
-        setMovies(request.data.results)
-        return request
-      }
-      fetchData()
-    },[fetchUrl])
-    return (
-        <div className="row">
-            <h2>{title}</h2>
-            <div className="row__posters">
-            {movies.map(movie => (
-                <img className="row__poster" src={`${imageUrl}${movie.poster_path}`} loading="lazy" alt={movie.name} />
-            ))}
-            </div>
-        </div>
-    )
+  useEffect(() => {
+    async function fetchData() {
+      const request = await axios.get(fetchUrl)
+      //   console.log(request)
+      setMovies(request.data.results)
+      return request
+    }
+    fetchData()
+  }, [fetchUrl])
+
+  const opts = {
+    height: "390",
+    width: "100%",
+    playerVars: {
+      //https://developers.google.com/yputube/player_parameters,
+      autoplay: 1,
+    },
+  }
+
+  const handleClick = (movie) => {
+    if (trailerUrl) {
+      setTrailerUrl("")
+    } else {
+      movieTrailer(movie?.name || "")
+        .then((url) => {
+          const urlParams = new URLSearchParams(new URL(url).search)
+          setTrailerUrl(urlParams.get("v"))
+        })
+        .catch((error) => console.log(error))
+    }
+  }
+  return (
+    <div className="row">
+      <h2>{title}</h2>
+      <div className="row__posters">
+        {movies.map((movie) => (
+          <img
+            onClick={() => handleClick(movie)}
+            key={movie.id}
+            className={`row__poster ${isLargeRow && "row__posterLarge"}`}
+            src={`${imageUrl}${isLargeRow ? movie.poster_path : movie.backdrop_path}`}
+            loading="lazy"
+            alt={movie.name}
+          />
+        ))}
+      </div>
+      {trailerUrl && <Youtube videoId={trailerUrl} opts={opts} />}
+    </div>
+  )
 }
 
 export default Row
- 
